@@ -1,0 +1,36 @@
+node
+{
+    def buildNumber = BUILD_NUMBER
+    stage("Code Checkout from Github")
+    {
+        git branch: 'main', changelog: false, poll: false, url: 'https://github.com/devops-example-projects/Maven-Webapp-Docker.git'
+    }
+    stage("Code Build using Maven")
+    {
+        def mavenHome = tool name: 'Maven3.8.1', type: 'maven'
+        def mavenCMD = "${mavenHome}/bin/mvn"
+        sh "${mavenCMD} clean package"
+    }
+    stage("Build Docker Image")
+    {
+        sh "docker build -t adityadevops/docker-webapp:${buildNumber} ."
+    }
+    stage("Push Docker Image to Docker Hub")
+    {
+        withCredentials([string(credentialsId: 'DockerHub', variable: 'DockerHub')]) {
+            sh "docker login -u adityadevops -p ${DockerHub}"
+        }
+        sh "docker push adityadevops/docker-webapp:${buildNumber}"
+        
+    }
+    stage("Run Docker Container in Docker Server")
+    {
+        sshagent(['DockerServer']) 
+        {
+            sh "ssh -o StrictHostKeyChecking=no ubuntu@172.31.75.180 docker stop webapp || true"
+            sh "ssh -o StrictHostKeyChecking=no ubuntu@172.31.75.180 docker rm -f  webapp || true"
+            sh "ssh -o StrictHostKeyChecking=no ubuntu@172.31.75.180 docker run -d -p 8080:8080 --name webapp adityadevops/docker-webapp:${buildNumber}"
+        }
+    }
+    
+}
