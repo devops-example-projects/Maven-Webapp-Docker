@@ -126,9 +126,6 @@ node
     stage("Build Docker Image")
     {
         sh "docker build -t adityadevops/java-app-docker-jenkins:${buildNumber} ."
-        
-        or
-        
         app = docker.build("adityadevops/java-app-docker-jenkins:${env.BUILD_NUMBER}")
     }
     stage("Test Image")
@@ -146,9 +143,8 @@ node
         }
         sh "docker push adityadevops/java-app-docker-jenkins:${buildNumber}"
 
-        or
-
-        docker.withRegistry('https://registry.hub.docker.com','DockerHub')
+       
+ docker.withRegistry('https://registry.hub.docker.com','DockerHub')
         {
             app.push()
         }
